@@ -1,6 +1,6 @@
 {
-  "name": "multiterm-astro",
-  "description": "A terminal-inspired coding blog built with Astro.",
+  "name": "sahil-makhija-blog",
+  "description": "Sahil Makhija's Blog Website.",
   "type": "module",
   "version": "1.0.0",
   "scripts": {
