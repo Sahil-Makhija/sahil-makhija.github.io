@@ -2,7 +2,7 @@ import type { SiteConfig } from '~/types'
 
 const config: SiteConfig = {
   // Absolute URL to the root of your published site, used for generating links and sitemaps.
-  site: process.env.PUBLIC_SITE_URL || 'http://localhost:4321/',
+  site: 'https://sahil-makhija.github.io',
   // The name of your site, used in the title and for SEO.
   title: "Sahil' Blog",
   // The description of your site, used for SEO and RSS feed.
