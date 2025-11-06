@@ -8,7 +8,7 @@ const config: SiteConfig = {
   // The description of your site, used for SEO and RSS feed.
   description: 'CTFs, Writeups, Notes',
   // The author of the site, used in the footer, SEO, and RSS feed.
-  author: 'Katy Kookaburra',
+  author: 'Sahil Makhija',
   // Keywords for SEO, used in the meta tags.
   tags: ['ctfs', 'cybersecurity', 'Terminal', 'engineering', 'development'],
   // Path to the image used for generating social media previews.
@@ -151,9 +151,9 @@ const config: SiteConfig = {
   // Social links to display in the footer.
   socialLinks: {
     github: 'https://github.com/Sahil-Makhija',
-    email: 'https://github.com/stelcodes/multiterm-astro',
-    linkedin: 'https://github.com/stelcodes/multiterm-astro',
-    twitter: 'https://github.com/stelcodes/multiterm-astro',
+    email: 'sahilmakhija667@gmail.com',
+    linkedin: 'https://www.linkedin.com/in/sahil-makhija-407449227',
+    twitter: 'https://x.com/Sahil87057878',
     rss: true, // Set to true to include an RSS feed link in the footer
   },
   // Configuration for Giscus comments.
