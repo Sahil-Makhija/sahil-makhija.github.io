@@ -1,5 +1,5 @@
 ---
-title: 'THM | Internal'
+title: 'THM | Intranet'
 published: 2026-01-16
 draft: false
 description: 'THM Room `Internal` writeup.'
