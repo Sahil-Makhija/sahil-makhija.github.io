@@ -169,7 +169,7 @@ $ hydra -L <(seq -w 1 999) -s 10.49.189.242 8080 http-form-post "/sms:sms=^USER^
 ```
 - As expected, this worked and returned an `OTP` to log in.
 ---
-## Recon - Internal Website after autenticated
+## Recon - Internal Website after authenticated
 - After logging in, I had access to these pages:
 	- `/home`
 	- `/internal`
