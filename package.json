@@ -73,5 +73,11 @@
     "prettier": "3.6.2",
     "prettier-plugin-astro": "0.14.1",
     "sass-embedded": "^1.92.1"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.27.7": true,
+    "@parcel/watcher@2.6.0": true
   }
 }
