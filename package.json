@@ -11,6 +11,13 @@
     "astro": "astro",
     "format": "prettier --write ."
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "esbuild",
+      "sharp"
+    ]
+  },
   "dependencies": {
     "@astrojs/markdown-remark": "^6.3.6",
     "@astrojs/mdx": "^4.3.4",
